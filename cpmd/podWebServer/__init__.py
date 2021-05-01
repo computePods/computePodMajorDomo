@@ -11,12 +11,9 @@ from hypercorn.asyncio import serve
 
 class PodWebServer : 
 
-  addPublishInterface = webServer.publish.addPublishInterface
-  
-  def __init__(self, aNatsClient, aNatsServer) :
+  def __init__(self, aNatsClient) :
     self.app = FastAPI()
     self.natsClient = aNatsClient
-    self.natsServer = aNatsServer
 
     @self.app.get("/")
     async def read_root():
@@ -25,8 +22,6 @@ class PodWebServer :
 #    self.addPublishInterface()
     
   async def runApp(self) :
-
-    await self.natsServer.waitUntilRunning("webServer")
     
     config = Config()
     config.bind = ["127.0.0.1:8080"]

@@ -26,22 +26,28 @@ signal.signal(signal.SIGHUP, signalHandler)
 
 async def main() :
   natsServer = NatsServer()
-  natsClient = NatsClient(natsServer)
-  externalWS = ExternalWebServer(natsClient, natsServer)
-  podWS      = PodWebServer(natsClient, natsServer)
+  natsServerTask = asyncio.create_task(natsServer.runNatsServer())
+  await natsServer.waitUntilRunning("cpmd")
+  
+  natsClient = NatsClient("majorDomo", 10)
+  await natsClient.connectToServers()
+  
+  externalWS = ExternalWebServer(natsClient)
+  podWS      = PodWebServer(natsClient)
 
   try: 
     await asyncio.gather(
-      natsServer.runNatsServer(),
-      natsClient.runNatsClient(),
+      natsClient.heartBeat(),
       externalWS.runApp(),
       podWS.runApp()
     )
-  finally:
-    await theNatsServer.stopServer()
+  finally: 
+    await natsClient.closeConnection()
+    await natsServer.stopServer()
+    await natsServerTask
 
 try: 
-  asyncio.run(main())
+  asyncio.run(main(), debug=True)
 except SignalException as err :
   logging.info("Shutting down: {}".format(str(err)))
 except Exception as err :
