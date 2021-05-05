@@ -6,12 +6,12 @@ import platform
 from nats.aio.client import Client as NATS
 from nats.aio.errors import ErrConnectionClosed, ErrTimeout, ErrNoServers
 
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 class NatsMsg(BaseModel):
   subject: str
-  message: str
+  message: List
 
 async def natsClientError(err) :
   logging.error("NatsClient : {err}".format(err=err))
