@@ -1,8 +1,8 @@
 {
-  "name": "computepodmajordomo",
+  "name": "computepod-majordomo",
   "version": "1.0.0",
   "description": "A user interface for the ComputePods project",
-  "main": "index.js",
+  "main": "cpmd/index.js",
   "directories": {},
   "dependencies": {
     "codejar": "^3.4.0",
