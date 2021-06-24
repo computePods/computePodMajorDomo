@@ -41,6 +41,7 @@ class ExternalWebServer :
     config = Config()
     config.bind = ["0.0.0.0:8000"]
     config.use_reload = reload
+    config.accesslog  = '-'
     await serve(self.app, config),
 
 """
