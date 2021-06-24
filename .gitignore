@@ -1,5 +1,8 @@
 node_modules
 static
+clientApp
+interfaces
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

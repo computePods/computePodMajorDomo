@@ -7,12 +7,10 @@ import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 
-import externalWebServer.publish
+#import webServer.publish
 
-class ExternalWebServer : 
+class PodWebServer :
 
-  addPublishInterface = externalWebServer.publish.addPublishInterface
-  
   def __init__(self, aNatsClient) :
     self.app = FastAPI()
     self.natsClient = aNatsClient
@@ -21,12 +19,13 @@ class ExternalWebServer :
     async def read_root():
       return {"Hello": "World"}
 
-    self.addPublishInterface()
-    
-  async def runApp(self) :
+#    self.addPublishInterface()
+
+  async def runApp(self, reload) :
 
     config = Config()
-    config.bind = ["0.0.0.0:8000"]
+    config.bind = ["127.0.0.1:8080"]
+    config.use_reload = reload
     await serve(self.app, config),
 
 """

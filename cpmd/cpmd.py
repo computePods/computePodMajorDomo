@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import logging
 import signal
@@ -8,10 +9,16 @@ from podWebServer import PodWebServer
 from natsClient import NatsClient
 from natsServer import NatsServer
 
+argparser = argparse.ArgumentParser(description="Run the ComputePods MajorDomo pod-server")
+argparser.add_argument("--reload", action="store_true", default=False,
+  help="Reload the external and pod webservers if any application files change")
+
+cliArgs = argparser.parse_args()
+
 #logging.basicConfig(filename='majorDomo.log', encoding='utf-8', level=logging.DEBUG)
 logging.basicConfig(level=logging.INFO)
 logging.info("ComputePods MajorDomo starting")
-  
+
 class SignalException(Exception):
   def __init__(self, message):
     super(SignalException, self).__init__(message)
@@ -28,25 +35,25 @@ async def main() :
   natsServer = NatsServer()
   natsServerTask = asyncio.create_task(natsServer.runNatsServer())
   await natsServer.waitUntilRunning("cpmd")
-  
+
   natsClient = NatsClient("majorDomo", 10)
   await natsClient.connectToServers()
-  
+
   externalWS = ExternalWebServer(natsClient)
   podWS      = PodWebServer(natsClient)
 
-  try: 
+  try:
     await asyncio.gather(
       natsClient.heartBeat(),
-      externalWS.runApp(),
-      podWS.runApp()
+      externalWS.runApp(cliArgs.reload),
+      podWS.runApp(cliArgs.reload),
     )
-  finally: 
+  finally:
     await natsClient.closeConnection()
     await natsServer.stopServer()
     await natsServerTask
 
-try: 
+try:
   asyncio.run(main(), debug=True)
 except SignalException as err :
   logging.info("Shutting down: {}".format(str(err)))
