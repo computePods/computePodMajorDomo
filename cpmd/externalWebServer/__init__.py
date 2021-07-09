@@ -38,6 +38,12 @@ class ExternalWebServer :
 
   async def runApp(self, reload) :
 
+// We will listen for NATS reload events (or changes to files in
+// directories we are using) and then use the graceful shutdown to
+// shutdown and restart the server.
+//
+// https://pgjones.gitlab.io/hypercorn/how_to_guides/api_usage.html#graceful-shutdown
+
     config = Config()
     config.bind = ["0.0.0.0:8000"]
     config.use_reload = reload

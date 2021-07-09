@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# This bash script uses tmux, rerun2 and the OS to develop the
+# Python/FastAPI based pod server for the ComputePods MajorDomo.
+
+# We use tmux so that we can *see* the outputs of the various parallel
+# commands in separate places.
+
+# You can use the SHIFT key in tmux to access the "normal" mouse menus.
+# This is useful if you want the "normal" "open-link" command....
+#
+# see: https://www.rushiagr.com/blog/2016/06/16/everything-you-need-to-know-about-tmux-copy-pasting-ubuntu/
+
+echo ""
+
+if ! which tmux > /dev/null ; then
+  echo "You need to install tmux to use this script"
+  echo ""
+  echo "To this type:"
+  echo "  sudo apt install tmux"
+  exit -1
+fi
+
+if ! which inotifywait > /dev/null ; then
+  echo "You need to install inotifywait to use this script"
+  echo ""
+  echo "To do this type:"
+  echo "  sudo apt install inotify-tools"
+  exit -1
+fi
+
+# This check needs to be made first to ensure we are running in the
+# correct directory
+#
+targetInterfacesDir=./cpmd/interfaces
+if ! ls $targetInterfacesDir > /dev/null ; then
+  echo ""
+  echo "This script assumes it is run in the base of the"
+  echo "ComputePods MajorDomo project"
+  echo ""
+  echo "To run it type:"
+  echo "  ./scripts/devMockServer"
+  exit -1
+fi
+
+origInterfacesDir=../interfaces/interfaces/dist/js
+if ! ls $origInterfacesDir > /dev/null ; then
+  echo ""
+  echo "This script assumes that the ComputePods Interfaces project is"
+  echo "located beside the ComputePods MajorDomo UI project"
+  exit -1
+fi
+
+# This check needs to be made first to ensure we are running in the
+# correct directory
+#
+targetClientAppDir=./cpmd/clientApp
+if ! ls $targetClientAppDir > /dev/null ; then
+  echo ""
+  echo "This script assumes it is run in the base of the"
+  echo "ComputePods MajorDomo UI project"
+  echo ""
+  echo "To run it type:"
+  echo "  ./scripts/devMockServer"
+  exit -1
+fi
+
+origClientAppDir=../computePodsMajorDomoUI/distMCV
+if ! ls $origClientAppDir > /dev/null ; then
+  echo ""
+  echo "This script assumes that the ComputePods Interfaces project is"
+  echo "located beside the ComputePods MajorDomo UI project"
+  exit -1
+fi
+
+# Now capture the path to the rerun script
+#
+rerunCmd=./scripts/rerun
+
+if ! tmux has-session -t "devMajorDomoMockServer" ; then
+
+  # copy the ComputePods Interfaces javascript interfaces into this project
+  #
+  tmux new-session -s "devMajorDomoMockServer" -d  \
+    $rerunCmd -c -v -w $origInterfacesDir \
+      "cp $origInterfacesDir/* $targetInterfacesDir"
+
+  # use ./mcv/createMCVapp.js to rebuild the Mithril Component Viewer
+  #
+  tmux split-window -v -p 75 \
+    npm run createMCVapp
+
+  # use Parcel to rebuild the mcv app
+  #
+  tmux split-window -v -p 50 \
+    npm run mcvWatch
+
+  # use node to run the mock server
+  #
+  tmux split-window -v  \
+    npx supervisor --watch ./mockServer --non-interactive \
+      --no-restart-on error \
+      node ./mockServer/mockServer.mjs
+
+  tmux set-option -g mouse
+
+fi
+
+tmux attach-session -t "devMajorDomoMockServer" -d
