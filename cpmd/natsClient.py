@@ -1,17 +1,11 @@
 import asyncio
+import json
 import logging
 import os
 import platform
 
 from nats.aio.client import Client as NATS
 from nats.aio.errors import ErrConnectionClosed, ErrTimeout, ErrNoServers
-
-from typing import Optional, List
-from pydantic import BaseModel
-
-class NatsMsg(BaseModel):
-  subject: str
-  message: List
 
 async def natsClientError(err) :
   logging.error("NatsClient : {err}".format(err=err))
@@ -42,9 +36,21 @@ class NatsClient :
       await self.nc.publish("heartbeat", bytes(msg, 'utf-8'))
       await asyncio.sleep(self.heartBeatPeriod)
 
-  async def sendMessage(self, msg: NatsMsg) :
-    await self.nc.publish(msg.subject, bytes(msg.message, 'utf-8'))
-        
+  async def sendMessage(self, aSubject, aMsg) :
+    msgStr = json.dumps(aMsg)
+    await self.nc.publish(aSubject, bytes(msgStr, 'utf-8'))
+
+  async def listenToSubject(self, aSubject, aCallback) :
+    print("listening to subject [{}]".format(aSubject))
+
+    def subjectCallback(aNATSMessage) :
+      theSubject = aNATSMessage.subject
+      theJSONMsg = aNATSMessage.data
+      theMsg = json.loads(theJSONMsg)
+      aCallback(aSubject, theSubject, theMsg)
+
+    await self.nc.subscribe(aSubject, cb=subjectCallback)
+
   async def connectToServers(self):
     await self.nc.connect(
       servers=["nats://127.0.0.1:4222"],
@@ -53,7 +59,7 @@ class NatsClient :
       reconnected_cb=natsClientReconnected
     )
 
-  async def closeConnection(self) :    
+  async def closeConnection(self) :
     # Terminate connection to NATS.
     self.shutdown = True
     await asyncio.sleep(1)
