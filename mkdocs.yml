@@ -1,0 +1,17 @@
+site_name: ComputePods MajorDomo
+
+site_url: https://computepods.github.io/majorDomo/
+
+repo_url: https://github.com/computePods/majorDomo
+
+plugins:
+  - search
+  - compute-pods
+  - awesome-pages
+  - mermaid2
+  - mkdocstrings:
+      watch:
+        - cpmd
+
+theme:
+  name: material
