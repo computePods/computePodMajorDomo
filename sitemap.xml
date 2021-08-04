@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://computepods.github.io/majorDomo/</loc>
+         <lastmod>2021-08-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://computepods.github.io/majorDomo/building/</loc>
+         <lastmod>2021-08-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://computepods.github.io/majorDomo/dependencyAnalysis/</loc>
+         <lastmod>2021-08-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://computepods.github.io/majorDomo/ui/</loc>
+         <lastmod>2021-08-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://computepods.github.io/majorDomo/resources/clientSide/</loc>
+         <lastmod>2021-08-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+</urlset>
