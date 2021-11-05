@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import Optional, List
 from fastapi import FastAPI
-from natsClient import NatsMsg
+from pydantic import BaseModel
 
 # WebServer interface definition....
+
+class NatsMsg(BaseModel):
+  subject: str
+  message: List
 
 def addPublishInterface(self) :
   @self.app.put("/publish")

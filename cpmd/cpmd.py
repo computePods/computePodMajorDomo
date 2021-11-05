@@ -2,61 +2,78 @@ import argparse
 import asyncio
 import logging
 import signal
+import sys
 import traceback
 
-from externalWebServer import ExternalWebServer
-from podWebServer import PodWebServer
-from natsClient import NatsClient
-from natsServer import NatsServer
+from cpmd.webServer import WebServer
+from cpmd.loadConfiguration import parseCliArgs, loadConfig
+from cpmd.managers import startManagers
 
-argparser = argparse.ArgumentParser(description="Run the ComputePods MajorDomo pod-server")
-argparser.add_argument("--reload", action="store_true", default=False,
-  help="Reload the external and pod webservers if any application files change")
 
-cliArgs = argparser.parse_args()
+#import cputils.recursivewatch
+from   cputils.natsClient import NatsClient
 
-#logging.basicConfig(filename='majorDomo.log', encoding='utf-8', level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
-logging.info("ComputePods MajorDomo starting")
-
-class SignalException(Exception):
-  def __init__(self, message):
-    super(SignalException, self).__init__(message)
-
-def signalHandler(signum, frame) :
-  msg = "SignalHandler: Caught signal {}".format(signum)
-  logging.info(msg)
-  raise SignalException(msg)
-
-signal.signal(signal.SIGTERM, signalHandler)
-signal.signal(signal.SIGHUP, signalHandler)
-
-async def main() :
-  natsServer = NatsServer()
-  natsServerTask = asyncio.create_task(natsServer.runNatsServer())
-  await natsServer.waitUntilRunning("cpmd")
+async def runTasks(config, wsShutDown) :
 
   natsClient = NatsClient("majorDomo", 10)
-  await natsClient.connectToServers()
+  host = "127.0.0.1"
+  port = 4222
+  if 'natsServer' in config :
+    natsServerConfig = config['natsServer']
+    if 'host' in natsServerConfig : host = natsServerConfig['host']
+    if 'port' in natsServerConfig : port = natsServerConfig['port']
+  natsServerUrl = f"nats://{host}:{port}"
+  print(f"connecting to nats server: [{natsServerUrl}]")
+  await natsClient.connectToServers([ natsServerUrl ])
 
-  externalWS = ExternalWebServer(natsClient)
-  podWS      = PodWebServer(natsClient)
+  managers = startManagers("majorDomo", config, natsClient)
+
+  ws = WebServer(config, managers)
 
   try:
     await asyncio.gather(
       natsClient.heartBeat(),
-      externalWS.runApp(cliArgs.reload),
-      podWS.runApp(cliArgs.reload),
+      ws.runApp(config, wsShutDown),
     )
   finally:
     await natsClient.closeConnection()
-    await natsServer.stopServer()
-    await natsServerTask
 
-try:
-  asyncio.run(main(), debug=True)
-except SignalException as err :
-  logging.info("Shutting down: {}".format(str(err)))
-except Exception as err :
-  msg = "\n ".join(traceback.format_exc().split("\n"))
-  logging.info("Shutting down after exception: \n {}".format(msg))
+
+def cpmd() :
+  cliArgs = parseCliArgs()
+
+  if cliArgs.debug :
+    logging.basicConfig(level=logging.DEBUG)
+  else :
+    logging.basicConfig(level=logging.WARNING)
+  logger = logging.getLogger("majorDomo")
+
+  #logging.basicConfig(filename='majorDomo.log', encoding='utf-8', level=logging.DEBUG)
+  #logging.basicConfig(level=logging.INFO)
+
+  logger.info("ComputePods MajorDomo starting")
+
+  config = loadConfig(cliArgs)
+
+  loop = asyncio.get_event_loop()
+  wsShutDown = asyncio.Event()
+
+  def signalHandler(signum) :
+    """
+    Handle an OS system signal by stopping the debouncing tasks
+
+    """
+    print("")
+    print("Shutting down...")
+    logger.info("SignalHandler: Caught signal {}".format(signum))
+    wsShutDown.set()
+    loop.stop()
+
+  loop.set_debug(cliArgs.verbose)
+  loop.add_signal_handler(signal.SIGTERM, signalHandler, "SIGTERM")
+  loop.add_signal_handler(signal.SIGHUP,  signalHandler, "SIGHUP")
+  loop.add_signal_handler(signal.SIGINT,  signalHandler, "SIGINT")
+  loop.create_task(runTasks(config, wsShutDown))
+  loop.run_forever()
+
+  print("\ndone!")

@@ -1,0 +1,11 @@
+natsServer:
+  host: localhost
+  port: 4222
+
+webServer:
+  sockets:
+    # For the web/browser based interface
+    - host: localhost
+      port: 8080
+    # For the command line and rsyncCtrl interfaces
+    - path: ~/.local/cpmd/server.socket

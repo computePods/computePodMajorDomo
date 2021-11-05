@@ -1,3 +1,5 @@
+.pdm.toml
+cpmdConfig.yaml
 site
 node_modules
 static
