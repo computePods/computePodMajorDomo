@@ -3,55 +3,73 @@
 import os
 import yaml
 
-import cputils.yamlLoader
+import logging
+logger = logging.getLogger("majorDomo")
 
 class ProjectsManager :
   """The ComputePods ProjectsManager loads, parse and maintains the project
   details for a user's use of a federation of ComputePods."""
 
-  def __init__(self, toolName, projectDirs, natsClient) :
+  def __init__(self, toolName, natsClient) :
     self.toolName    = toolName
     self.nc          = natsClient
-    self.projectDirs = projectDirs
     self.projectData = {
       'projects' : {}
     }
 
-    if len(projectDirs) < 1 :
-      print("\nWARNING: No project directories provided!\n")
+  def listProjects(self) :
+    """List known projects"""
 
-    try :
-      for aProjectDir in projectDirs :
-        projectDir = os.path.abspath(os.path.expanduser(aProjectDir))
-        self.loadProjectsFrom(projectDir)
-    except Exception as err :
-      print(f"Could not load the [{aProjectDir}] project")
-      print(repr(err))
-      print("")
+    projects = self.projectData['projects']
+    logger.debug(type(projects))
+    logger.debug(yaml.dump(projects))
+    projectsDict = {}
+    for aProject, projectDetails in projects.items() :
+      projectsDict[aProject] = projectDetails.projectDir
+    return projectsDict
 
-  def loadProjectsFrom(self, aProjectDir) :
-    """Load project from YAML files in the directory provided"""
+  def addedProject(self, projectDetails) :
+    """Add the project definition"""
 
-    def addProjectDir(newYamlData) :
-      if 'projects' in newYamlData :
-        for projectName, projectData in newYamlData['projects'].items() :
-          projectData['path'] = aProjectDir
+    projectName = projectDetails.projectName
 
-    newProjectData = cputils.yamlLoader.loadYamlFrom(
-      self.projectData, aProjectDir, [ '.PYML'],
-      callBack=addProjectDir
-    )
+    projects = self.projectData['projects']
+    if projectName not in projects :
+      projects[projectName] = projectDetails
+      return True
+    return False
 
-  async def registerProjects(self) :
-    theProjects = self.projectData['projects']
-    for aProject, theProject in theProjects.items() :
-      await self.nc.sendMessage(
-      "register.projects",
-      {
-        "chefName"    : self.chefName,
-        "projectName" : aProject,
-        "theProject"  : theProject
-      },
-        0.1
-      )
+  def updatedProject(self, projectDetails) :
+    """Update the project definition"""
+
+    projectName = projectDetails.projectName
+    projects = self.projectData['projects']
+    if projectName in projects :
+      projects[projectName] = projectDetails
+      return True
+    return False
+
+  def removedProject(self, projectDetails) :
+    """Remove the project definition"""
+
+    projectName = projectDetails.projectName
+    projects = self.projectData['projects']
+    if projectName in projects :
+      del projects[projectName]
+    if projectName not in projects :
+      return True
+    return False
+
+#  async def registerProjects(self) :
+#    theProjects = self.projectData['projects']
+#    for aProject, theProject in theProjects.items() :
+#      await self.nc.sendMessage(
+#      "register.projects",
+#      {
+#        "chefName"    : self.chefName,
+#        "projectName" : aProject,
+#        "theProject"  : theProject
+#      },
+#        0.1
+#      )
 

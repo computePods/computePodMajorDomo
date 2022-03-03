@@ -2,26 +2,46 @@
 
 import yaml
 
-from cpinterfaces.python.projectPath import ProjectPath
+from cpinterfaces.python.projectDetails import ProjectDetails
+
+import logging
+logger = logging.getLogger("majorDomo")
 
 def implementProjectInterfaces(self) :
 
   @self.app.get_projects
   async def get_projects_impl() :
-    projects = self.managers.projects.projectData['projects']
-    projectsDict = {}
-    for aProject, projectDetails in projects.items() :
-      projectsDict[aProject] = projectDetails['path']
-    return projectsDict
+    return self.managers.projects.listProjects()
 
   @self.app.post_project_add
-  async def post_project_add_impl(projectPath: ProjectPath) :
-    projects = self.managers.projects.projectData['projects']
-    if projectPath.projectName not in projects :
-      projects[projectPath.projectName] = projectPath.projectDir
+  async def post_project_add_impl(projectDetails: ProjectDetails) :
+    result = "Not added"
+    if self.managers.projects.addedProject(projectDetails) :
+      result = "Added"
+    return {
+      'result'      : result,
+      'projectName' : projectDetails.projectName,
+      'projectDir'  : projectDetails.projectDir
+    }
+
+  @self.app.post_project_update
+  async def post_project_update_impl(projectDetails: ProjectDetails) :
+    result = "Not updated"
+    if self.managers.projects.updatedProject(projectDetails) :
+      result = "Updated"
+    return {
+      'result'      : result,
+      'projectName' : projectDetails.projectName,
+      'projectDir'  : projectDetails.projectDir
+    }
 
   @self.app.post_project_remove
-  async def post_project_remove_impl(projectPath: ProjectPath) :
-    projects = self.managers.projects.projectData['projects']
-    if projectPath.projectName in projects :
-      del projects[projectPath.projectName]
+  async def post_project_remove_impl(projectDetails: ProjectDetails) :
+    result = "Not removed"
+    if self.managers.projects.removedProject(projectDetails) :
+      result = "Removed"
+    return {
+      'result'      : result,
+      'projectName' : projectDetails.projectName,
+      'projectDir'  : projectDetails.projectDir
+    }
