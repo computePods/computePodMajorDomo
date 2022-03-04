@@ -16,6 +16,7 @@ import yaml
 import cpinterfaces.python.AllFastApiRoutes
 #import cpmd.webServer.publish
 import cpmd.webServer.projects
+import cpmd.webServer.security
 
 class WebServer :
 
@@ -30,6 +31,7 @@ class WebServer :
     cpinterfaces.python.AllFastApiRoutes.addAllInterface(self.app)
     #self.addPublishInterface()
     cpmd.webServer.projects.implementProjectInterfaces(self)
+    cpmd.webServer.security.implementSecurityInterfaces(self)
 
     #self.app.mount("/clientApp", StaticFiles(directory="clientApp"), name='clientApp')
 
