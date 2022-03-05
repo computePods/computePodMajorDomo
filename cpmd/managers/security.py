@@ -17,21 +17,37 @@ class SecurityManager :
       'hostPublicKeys' : {}
     }
 
+    @natsClient.subscribe("security.getHostPublicKeys")
+    async def getHostPublicKeys(subject, data) :
+      self.sendHostPubicKeys()
+
+  def sendHostPublicKeys(self) :
+      hostPublicKeys = self.securityData['hostPublicKeys']
+      self.natsClient.sendMessage(
+        "security.hostPublicKeys",
+        hostPublicKeys,
+        0.1
+      )
+
   def addedHostPublicKey(self, hostPublicKey) :
     """Add a host's public key"""
 
     hostName = hostPublicKey.host
     hostPublicKeys = self.securityData['hostPublicKeys']
     hostPublicKeys[hostName] = hostPublicKey
+    self.sendHostPublicKeys()
     return True
 
   def removedHostPublicKey(self, hostPublicKey) :
     """Remove a host's public key"""
 
+    removed = False
     hostName = hostPublicKey.host
     hostPublicKeys = self.securityData['hostPublicKeys']
     if hostName in hostPublicKeys :
       del hostPublicKeys[hostName]
     if hostName not in hostPublicKeys :
-      return True
-    return False
+      removed = True
+
+    self.sendHostPublicKeys()
+    return removed
