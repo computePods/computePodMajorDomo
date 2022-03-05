@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 from .projects import ProjectsManager
+from .security import SecurityManager
 
 def startManagers(toolName, config, natsClient) :
 
@@ -12,9 +13,11 @@ def startManagers(toolName, config, natsClient) :
 
   #projects = ProjectsManager(toolName, projectDirs, natsClient)
   projects = ProjectsManager(toolName, natsClient)
+  security = SecurityManager(toolName, natsClient)
 
   return SimpleNamespace(
     toolName=toolName,
     natsClient=natsClient,
     projects=projects,
+    security=security
   )
