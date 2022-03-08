@@ -26,7 +26,7 @@ def implementSecurityInterfaces(self) :
   async def post_security_addHostPublicKey_impl( hostPublicKey: HostPublicKey) :
     logger.info("addHostPublicKey: {}".format(hostPublicKey))
     result = "Not added"
-    if self.managers.security.addedHostPublicKey(hostPublicKey) :
+    if await self.managers.security.addedHostPublicKey(hostPublicKey) :
       result = "Added"
     return {
       'result' : result,
@@ -36,7 +36,7 @@ def implementSecurityInterfaces(self) :
   @self.app.post_security_removeHostPublicKey
   async def post_security_removeHostPublicKey_impl( hostPublicKey: HostPublicKey) :
     result = "Not removed"
-    if self.managers.security.removedHostPublicKey(hostPublicKey) :
+    if await self.managers.security.removedHostPublicKey(hostPublicKey) :
       result = "Removed"
     return {
       'result' : result,

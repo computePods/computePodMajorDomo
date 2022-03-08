@@ -19,26 +19,29 @@ class SecurityManager :
 
     @natsClient.subscribe("security.getHostPublicKeys")
     async def getHostPublicKeys(subject, data) :
-      self.sendHostPubicKeys()
+      await self.sendHostPublicKeys()
 
-  def sendHostPublicKeys(self) :
+  async def sendHostPublicKeys(self) :
       hostPublicKeys = self.securityData['hostPublicKeys']
-      self.natsClient.sendMessage(
+      await self.nc.sendMessage(
         "security.hostPublicKeys",
         hostPublicKeys,
         0.1
       )
 
-  def addedHostPublicKey(self, hostPublicKey) :
+  async def addedHostPublicKey(self, hostPublicKey) :
     """Add a host's public key"""
 
     hostName = hostPublicKey.host
     hostPublicKeys = self.securityData['hostPublicKeys']
-    hostPublicKeys[hostName] = hostPublicKey
-    self.sendHostPublicKeys()
+    hostPublicKeys[hostName] = {
+      'host'      : hostPublicKey.host,
+      'publicKey' : hostPublicKey.publicKey
+    }
+    await self.sendHostPublicKeys()
     return True
 
-  def removedHostPublicKey(self, hostPublicKey) :
+  async def removedHostPublicKey(self, hostPublicKey) :
     """Remove a host's public key"""
 
     removed = False
@@ -49,5 +52,5 @@ class SecurityManager :
     if hostName not in hostPublicKeys :
       removed = True
 
-    self.sendHostPublicKeys()
+    await self.sendHostPublicKeys()
     return removed

@@ -28,6 +28,8 @@ async def runTasks(config, wsShutDown) :
 
   managers = startManagers("majorDomo", config, natsClient)
 
+  await natsClient.listenForMessagesOnDecoratedSubscriptions()
+
   ws = WebServer(config, managers)
 
   try:
