@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # This bash script uses the current working directory to create a simple
 # script to run the cpmd command anywhere in a user's workspace.
@@ -17,6 +17,8 @@ else
 fi
 
 cmdScript=$(pdm info | grep Packages | cut -d' ' -f5)/bin/cpmd
+
+mkdir -p $HOME/.local/bin
 
 cat << CMD_SCRIPT > $HOME/.local/bin/cpmd
 #!/bin/sh
