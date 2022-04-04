@@ -60,6 +60,21 @@ class ProjectsManager :
       return True
     return False
 
+  def listTargets(self, project) :
+    """List known targets for a given project"""
+
+    targets = {}
+
+    projectsData = self.projectData['projects']
+
+    if project in projectsData :
+      projectDef = projectsData[project].projectDesc
+      for aTargetName, aTargetDef in projectDef.targets.items() :
+        if aTargetName == 'defaults' : continue
+        targets[aTargetName] = aTargetDef.help
+
+    return targets
+
 #  async def registerProjects(self) :
 #    theProjects = self.projectData['projects']
 #    for aProject, theProject in theProjects.items() :

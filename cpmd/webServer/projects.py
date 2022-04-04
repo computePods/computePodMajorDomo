@@ -45,3 +45,7 @@ def implementProjectInterfaces(self) :
       'projectName' : projectDetails.projectName,
       'projectDir'  : projectDetails.projectDir
     }
+
+  @self.app.get_project_targets
+  async def get_project_targets_impl(project) :
+    return self.managers.projects.listTargets(project)
