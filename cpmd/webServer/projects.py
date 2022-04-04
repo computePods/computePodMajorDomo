@@ -49,3 +49,7 @@ def implementProjectInterfaces(self) :
   @self.app.get_project_targets
   async def get_project_targets_impl(project) :
     return self.managers.projects.listTargets(project)
+
+  @self.app.get_project_definition
+  async def get_project_definition_impl(project) :
+    return self.managers.projects.returnDefinition(project)

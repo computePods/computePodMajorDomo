@@ -28,8 +28,34 @@ class ProjectsManager :
       projectsDict[aProject] = projectDetails.projectDir
     return projectsDict
 
+  def mergeArrays(self, a1, a2) :
+    mDict = { }
+    if a1 :
+      for anItem in a1 : mDict[anItem] = True
+    if a2 :
+      for anItem in a2 : mDict[anItem] = True
+    return list(mDict.keys())
+
+  def normalizeProject(self, projectDetails) :
+    projDesc = projectDetails.projectDesc
+    targets = projDesc.targets
+    if 'defaults' in targets :
+      defaults = targets['defaults']
+      for aName, aDef in targets.items() :
+        if aName == 'defaults' : continue
+        if not aDef.outputDir : aDef.outputDir = defaults.outputDir
+        if not aDef.worker    : aDef.worker    = defaults.worker
+        if not aDef.help      : aDef.help      = defaults.help
+        aDef.uses         = self.mergeArrays(aDef.uses,    defaults.uses)
+        aDef.outputs      = self.mergeArrays(aDef.outputs, defaults.outputs)
+        aDef.dependencies = self.mergeArrays(
+          aDef.dependencies, defaults.dependencies
+        )
+
   def addedProject(self, projectDetails) :
     """Add the project definition"""
+
+    self.normalizeProject(projectDetails)
 
     projectName = projectDetails.projectName
 
@@ -41,6 +67,8 @@ class ProjectsManager :
 
   def updatedProject(self, projectDetails) :
     """Update the project definition"""
+
+    self.normalizeProject(projectDetails)
 
     projectName = projectDetails.projectName
     projects = self.projectData['projects']
@@ -75,16 +103,14 @@ class ProjectsManager :
 
     return targets
 
-#  async def registerProjects(self) :
-#    theProjects = self.projectData['projects']
-#    for aProject, theProject in theProjects.items() :
-#      await self.nc.sendMessage(
-#      "register.projects",
-#      {
-#        "chefName"    : self.chefName,
-#        "projectName" : aProject,
-#        "theProject"  : theProject
-#      },
-#        0.1
-#      )
+  def returnDefinition(self, project) :
+    """Return the defintion of a given project"""
 
+    projectDef = {}
+
+    projectsData = self.projectData['projects']
+
+    if project in projectsData :
+      projectDef = projectsData[project].projectDesc
+
+    return projectDef
