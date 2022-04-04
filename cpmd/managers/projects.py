@@ -46,11 +46,13 @@ class ProjectsManager :
         if not aDef.outputDir : aDef.outputDir = defaults.outputDir
         if not aDef.worker    : aDef.worker    = defaults.worker
         if not aDef.help      : aDef.help      = defaults.help
-        aDef.uses         = self.mergeArrays(aDef.uses,    defaults.uses)
-        aDef.outputs      = self.mergeArrays(aDef.outputs, defaults.outputs)
+        aDef.uses         = self.mergeArrays(aDef.uses,      defaults.uses)
+        aDef.outputs      = self.mergeArrays(aDef.outputs,   defaults.outputs)
+        aDef.externals    = self.mergeArrays(aDef.externals, defaults.externals)
         aDef.dependencies = self.mergeArrays(
           aDef.dependencies, defaults.dependencies
         )
+        aDef.projectDir = projectDetails.projectDir
 
   def addedProject(self, projectDetails) :
     """Add the project definition"""
@@ -114,3 +116,46 @@ class ProjectsManager :
       projectDef = projectsData[project].projectDesc
 
     return projectDef
+
+  def updateExternals(self, aDef) :
+    projects = self.projectData['projects']
+    for aUse in aDef.uses :
+      pkgName, pkgTarget = aUse.split(':')
+      if pkgName in projects :
+        aProjTargets = projects[pkgName].projectDesc.targets
+        if pkgTarget in aProjTargets :
+          aTarget = aProjTargets[pkgTarget]
+          prefix = os.path.join(
+            aTarget.projectDir,
+            aTarget.outputDir
+          )
+          if aTarget.outputs :
+            for anOutput in aTarget.outputs :
+              aDef.externals.append(os.path.join(prefix, anOutput))
+
+  def returnBuild(self, project, target) :
+    """Return the build details for the given target of a project."""
+
+    buildDef = {}
+
+    projectsData = self.projectData['projects']
+    #return projectsData
+
+    if project in projectsData :
+      projectDef = projectsData[project].projectDesc
+      if target in projectDef.targets :
+        buildDef = projectDef.targets[target]
+
+    self.updateExternals(buildDef)
+    return buildDef
+
+
+
+
+
+
+
+
+
+
+
