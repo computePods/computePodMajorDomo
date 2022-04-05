@@ -36,7 +36,12 @@ class ProjectsManager :
       for anItem in a2 : mDict[anItem] = True
     return list(mDict.keys())
 
+  # We might want to dynamically add fields to a pydantic object
+  # to do this see:
+  # https://github.com/samuelcolvin/pydantic/issues/1937#issuecomment-695313040
+  #
   def normalizeProject(self, projectDetails) :
+
     projDesc = projectDetails.projectDesc
     targets = projDesc.targets
     if 'defaults' in targets :
@@ -46,10 +51,13 @@ class ProjectsManager :
         if not aDef.outputDir : aDef.outputDir = defaults.outputDir
         if not aDef.worker    : aDef.worker    = defaults.worker
         if not aDef.help      : aDef.help      = defaults.help
-        aDef.uses         = self.mergeArrays(aDef.uses,      defaults.uses)
-        aDef.outputs      = self.mergeArrays(aDef.outputs,   defaults.outputs)
-        aDef.externals    = self.mergeArrays(aDef.externals, defaults.externals)
-        aDef.dependencies = self.mergeArrays(
+        aDef.uses          = self.mergeArrays(aDef.uses,          defaults.uses)
+        aDef.outputs       = self.mergeArrays(aDef.outputs,       defaults.outputs)
+        aDef.origExternals = self.mergeArrays(aDef.origExternals, defaults.origExternals)
+        aDef.origExternals = self.mergeArrays(aDef.origExternals, defaults.externals)
+        aDef.origExternals = self.mergeArrays(aDef.origExternals, aDef.externals)
+        aDef.externals     = [ ]
+        aDef.dependencies  = self.mergeArrays(
           aDef.dependencies, defaults.dependencies
         )
         aDef.projectDir = projectDetails.projectDir
@@ -119,7 +127,11 @@ class ProjectsManager :
 
   def updateExternals(self, aDef) :
     projects = self.projectData['projects']
+    aDef.externals = [ ]
+    for anExternal in aDef.origExternals :
+      aDef.externals.append(anExternal)
     for aUse in aDef.uses :
+      if aUse.find(':') < 0 : continue
       pkgName, pkgTarget = aUse.split(':')
       if pkgName in projects :
         aProjTargets = projects[pkgName].projectDesc.targets
@@ -145,17 +157,7 @@ class ProjectsManager :
       projectDef = projectsData[project].projectDesc
       if target in projectDef.targets :
         buildDef = projectDef.targets[target]
+    #return repr(type(buildDef))
 
     self.updateExternals(buildDef)
     return buildDef
-
-
-
-
-
-
-
-
-
-
-
