@@ -14,8 +14,12 @@ class ProjectsManager :
     self.toolName    = toolName
     self.nc          = natsClient
     self.projectData = {
-      'projects' : {}
+      'projects'             : {}
     }
+
+    @natsClient.subscribe("build.getExternalDependencies.>")
+    async def getExternalDependencies(subject, data) :
+      await self.sendExternalDependencies(subject)
 
   def listProjects(self) :
     """List known projects"""
@@ -51,6 +55,7 @@ class ProjectsManager :
         if not aDef.outputDir : aDef.outputDir = defaults.outputDir
         if not aDef.worker    : aDef.worker    = defaults.worker
         if not aDef.help      : aDef.help      = defaults.help
+        if not aDef.install   : aDef.install   = defaults.install
         aDef.uses          = self.mergeArrays(aDef.uses,          defaults.uses)
         aDef.outputs       = self.mergeArrays(aDef.outputs,       defaults.outputs)
         aDef.origExternals = self.mergeArrays(aDef.origExternals, defaults.origExternals)
@@ -137,13 +142,10 @@ class ProjectsManager :
         aProjTargets = projects[pkgName].projectDesc.targets
         if pkgTarget in aProjTargets :
           aTarget = aProjTargets[pkgTarget]
-          prefix = os.path.join(
-            aTarget.projectDir,
-            aTarget.outputDir
-          )
+          installDir = aTarget.install['dir']
           if aTarget.outputs :
             for anOutput in aTarget.outputs :
-              aDef.externals.append(os.path.join(prefix, anOutput))
+              aDef.externals.append(os.path.join(installDir, anOutput))
 
   def returnBuild(self, project, target) :
     """Return the build details for the given target of a project."""
@@ -161,3 +163,38 @@ class ProjectsManager :
 
     self.updateExternals(buildDef)
     return buildDef
+
+  async def sendExternalDependencies(self, origSubject) :
+    origSubject = ".".join(origSubject[3:len(origSubject)])
+    projects = self.projectData['projects']
+    uses = {}
+    for project in projects :
+      projectDef = projects[project].projectDesc
+      for target in projectDef.targets :
+        targetDef = projectDef.targets[target]
+        for aUse in targetDef.uses :
+          uses[aUse] = True
+
+    extDeps = {}
+    for aUse in uses :
+      if aUse.find(':') < 0 : continue
+      pkgName, pkgTarget = aUse.split(':')
+      if pkgName in projects :
+        aProjTargets = projects[pkgName].projectDesc.targets
+        if pkgTarget in aProjTargets :
+          aTarget = aProjTargets[pkgTarget]
+          if aTarget.worker != origSubject : continue
+          extDeps[aUse] = {
+            'project'    : pkgName,
+            'target'     : pkgTarget,
+            'projectDir' : aTarget.projectDir,
+            'install'    : aTarget.install,
+            'outputDir'  : aTarget.outputDir,
+            'outputs'    : aTarget.outputs,
+            'worker'     : aTarget.worker
+          }
+    await self.nc.sendMessage(
+      f"build.externalDependencies.{origSubject}",
+      extDeps
+    )
+
