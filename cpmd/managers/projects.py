@@ -19,7 +19,7 @@ class ProjectsManager :
 
     @natsClient.subscribe("build.getExternalDependencies.>")
     async def getExternalDependencies(subject, data) :
-      await self.sendExternalDependencies(subject)
+      await self.sendExternalDependencies(subject, data)
 
   def listProjects(self) :
     """List known projects"""
@@ -164,7 +164,7 @@ class ProjectsManager :
     self.updateExternals(buildDef)
     return buildDef
 
-  async def sendExternalDependencies(self, origSubject) :
+  async def sendExternalDependencies(self, origSubject, data) :
     origSubject = ".".join(origSubject[3:len(origSubject)])
     projects = self.projectData['projects']
     uses = {}
@@ -185,13 +185,16 @@ class ProjectsManager :
           aTarget = aProjTargets[pkgTarget]
           if aTarget.worker != origSubject : continue
           extDeps[aUse] = {
-            'project'    : pkgName,
-            'target'     : pkgTarget,
-            'projectDir' : aTarget.projectDir,
-            'install'    : aTarget.install,
-            'outputDir'  : aTarget.outputDir,
-            'outputs'    : aTarget.outputs,
-            'worker'     : aTarget.worker
+            'project'      : pkgName,
+            'target'       : pkgTarget,
+            'projectDir'   : aTarget.projectDir,
+            'installDir'   : aTarget.install['dir'],
+            'manualUpdate' : aTarget.install['manualUpdate'],
+            'outputDir'    : aTarget.outputDir,
+            'outputs'      : aTarget.outputs,
+            'worker'       : aTarget.worker,
+            'rsyncUser'    : projects[pkgName].rsyncUser,
+            'rsyncHost'    : projects[pkgName].rsyncHost,
           }
     await self.nc.sendMessage(
       f"build.externalDependencies.{origSubject}",
