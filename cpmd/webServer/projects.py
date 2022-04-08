@@ -16,7 +16,7 @@ def implementProjectInterfaces(self) :
   @self.app.post_project_add
   async def post_project_add_impl(projectDetails: ProjectDetails) :
     result = "Not added"
-    if self.managers.projects.addedProject(projectDetails) :
+    if await self.managers.projects.addedProject(projectDetails) :
       result = "Added"
     return {
       'result'      : result,
@@ -27,7 +27,7 @@ def implementProjectInterfaces(self) :
   @self.app.post_project_update
   async def post_project_update_impl(projectDetails: ProjectDetails) :
     result = "Not updated"
-    if self.managers.projects.updatedProject(projectDetails) :
+    if await self.managers.projects.updatedProject(projectDetails) :
       result = "Updated"
     return {
       'result'      : result,
@@ -38,7 +38,7 @@ def implementProjectInterfaces(self) :
   @self.app.post_project_remove
   async def post_project_remove_impl(projectDetails: ProjectDetails) :
     result = "Not removed"
-    if self.managers.projects.removedProject(projectDetails) :
+    if await self.managers.projects.removedProject(projectDetails) :
       result = "Removed"
     return {
       'result'      : result,

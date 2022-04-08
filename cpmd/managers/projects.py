@@ -25,8 +25,6 @@ class ProjectsManager :
     """List known projects"""
 
     projects = self.projectData['projects']
-    logger.debug(type(projects))
-    logger.debug(yaml.dump(projects))
     projectsDict = {}
     for aProject, projectDetails in projects.items() :
       projectsDict[aProject] = projectDetails.projectDir
@@ -67,7 +65,19 @@ class ProjectsManager :
         )
         aDef.projectDir = projectDetails.projectDir
 
-  def addedProject(self, projectDetails) :
+  async def sendGetExternalDependencies(self, projectDetails) :
+    workers = {}
+    projTargets = projectDetails.projectDesc.targets
+    for aTargetName, aTargetDesc in projTargets.items() :
+      if aTargetDesc.worker : workers[aTargetDesc.worker] = True
+
+    for aWorker in workers.keys() :
+      await self.nc.sendMessage(
+        f"build.getExternalDependencies.{aWorker}",
+        None
+      )
+
+  async def addedProject(self, projectDetails) :
     """Add the project definition"""
 
     self.normalizeProject(projectDetails)
@@ -77,10 +87,11 @@ class ProjectsManager :
     projects = self.projectData['projects']
     if projectName not in projects :
       projects[projectName] = projectDetails
+      await self.sendGetExternalDependencies(projectDetails)
       return True
     return False
 
-  def updatedProject(self, projectDetails) :
+  async def updatedProject(self, projectDetails) :
     """Update the project definition"""
 
     self.normalizeProject(projectDetails)
@@ -89,16 +100,18 @@ class ProjectsManager :
     projects = self.projectData['projects']
     if projectName in projects :
       projects[projectName] = projectDetails
+      await self.sendGetExternalDependencies(projectDetails)
       return True
     return False
 
-  def removedProject(self, projectDetails) :
+  async def removedProject(self, projectDetails) :
     """Remove the project definition"""
 
     projectName = projectDetails.projectName
     projects = self.projectData['projects']
     if projectName in projects :
       del projects[projectName]
+      await self.sendGetExternalDependencies(projectDetails)
     if projectName not in projects :
       return True
     return False
