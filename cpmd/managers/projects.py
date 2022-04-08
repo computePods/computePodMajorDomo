@@ -50,7 +50,9 @@ class ProjectsManager :
       defaults = targets['defaults']
       for aName, aDef in targets.items() :
         if aName == 'defaults' : continue
+        if not aDef.srcDir    : aDef.srcDir    = defaults.srcDir
         if not aDef.outputDir : aDef.outputDir = defaults.outputDir
+        if not aDef.mainFile  : aDef.mainFile  = defaults.mainFile
         if not aDef.worker    : aDef.worker    = defaults.worker
         if not aDef.help      : aDef.help      = defaults.help
         if not aDef.install   : aDef.install   = defaults.install
