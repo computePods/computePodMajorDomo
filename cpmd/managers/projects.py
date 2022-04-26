@@ -187,6 +187,7 @@ class ProjectsManager :
       projectDef = projects[project].projectDesc
       for target in projectDef.targets :
         targetDef = projectDef.targets[target]
+        if not targetDef.uses : targetDef.uses = []
         for aUse in targetDef.uses :
           uses[aUse] = True
 
