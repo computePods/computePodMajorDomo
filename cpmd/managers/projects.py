@@ -90,8 +90,8 @@ class ProjectsManager :
     if projectName not in projects :
       projects[projectName] = projectDetails
       await self.sendGetExternalDependencies(projectDetails)
-      return True
-    return False
+      return "Added"
+    return "Already added"
 
   async def updatedProject(self, projectDetails) :
     """Update the project definition"""
@@ -103,8 +103,8 @@ class ProjectsManager :
     if projectName in projects :
       projects[projectName] = projectDetails
       await self.sendGetExternalDependencies(projectDetails)
-      return True
-    return False
+      return "Updated"
+    return "Never added"
 
   async def removedProject(self, projectDetails) :
     """Remove the project definition"""
@@ -115,8 +115,8 @@ class ProjectsManager :
       del projects[projectName]
       await self.sendGetExternalDependencies(projectDetails)
     if projectName not in projects :
-      return True
-    return False
+      return "Removed"
+    return "Not removed"
 
   def listTargets(self, project) :
     """List known targets for a given project"""
