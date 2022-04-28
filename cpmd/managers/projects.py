@@ -176,11 +176,16 @@ class ProjectsManager :
         buildDef = projectDef.targets[target]
     #return repr(type(buildDef))
 
-    self.updateExternals(buildDef)
+    if buildDef : self.updateExternals(buildDef)
     return buildDef
 
   async def sendExternalDependencies(self, origSubject, data) :
+
     origSubject = ".".join(origSubject[3:len(origSubject)])
+
+    clean = False
+    if data and 'clean' in data : clean = data['clean']
+
     projects = self.projectData['projects']
     uses = {}
     for project in projects :
@@ -214,6 +219,9 @@ class ProjectsManager :
           }
     await self.nc.sendMessage(
       f"build.externalDependencies.{origSubject}",
-      extDeps
+      {
+        'clean'   : clean,
+        'extDeps' : extDeps
+      }
     )
 
